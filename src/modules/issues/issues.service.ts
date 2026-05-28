@@ -1,4 +1,5 @@
 import { pool } from "../../db";
+import type { IIssues } from "../users/users.interface ";
 
 
 const createIssuesIntoDB = async (payload:any) => {
@@ -32,8 +33,24 @@ const getSingleIssuesFromDB = async (id:string) =>{
         return result;
 };
 
+const updateIssuesFromDB = async (payload: IIssues, id:string) =>{
+    const {reporter_id, title, description, type, status} = payload;
+       const result = await pool.query(`
+            UPDATE issues SET 
+            reporter_id= COALESCE($1,reporter_id), 
+            title = COALESCE($2,title), 
+            description = COALESCE($3,description), 
+            type = COALESCE($4,type),
+            status = COALESCE($5,status)
+            WHERE id =$6 RETURNING *
+        `, [reporter_id, title, description, type, status,id]);
+
+        return result;
+};
+
 export const issuesService = {
     createIssuesIntoDB,
     getAllIssuesFromDB,
     getSingleIssuesFromDB,
+    updateIssuesFromDB,
 }

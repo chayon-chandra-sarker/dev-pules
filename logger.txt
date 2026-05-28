@@ -28,3 +28,11 @@ Method -> GET - Time -> 1779956165951 - URL -> /favicon.ico
 Method -> GET - Time -> 1779957779579 - URL -> /api/issues/2
 
 Method -> GET - Time -> 1779957798448 - URL -> /api/issues/3
+
+Method -> PUT - Time -> 1779960779575 - URL -> /api/issues/3
+
+Method -> PUT - Time -> 1779960857440 - URL -> /api/issues/3
+
+Method -> PUT - Time -> 1779960912645 - URL -> /api/issues/3
+
+Method -> PUT - Time -> 1779961015795 - URL -> /api/issues/3

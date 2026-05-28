@@ -53,6 +53,12 @@ const getSingleIssues = async (req:Request, res:Response) => {
                 message: "Issues Data Not Found",
                 data: {},
             })
+            sendResponse(res,{
+            statuscode:200,
+            success:true,
+            message: "Issues retrieved successfully",
+            data: result.rows,
+        })
         }
         sendResponse(res, {
             statuscode:200,
@@ -70,8 +76,39 @@ const getSingleIssues = async (req:Request, res:Response) => {
     }
 };
 
+const updateIssues = async (req:Request, res:Response) => {
+    const {id} = req.params;
+    const {reporter_id, title, description, type, status} = req.body;
+    try {
+        const result = await issuesService.updateIssuesFromDB(req.body, id as string);
+
+        if(result.rows.length === 0){
+           sendResponse(res, {
+                statuscode:404,
+                success:false,
+                message: "Issues Data Not Found",
+                data: {},
+            })
+        }
+        sendResponse(res,{
+            statuscode:200,
+            success:true,
+            message: "Issues Update successfully",
+            data: result.rows,
+        })
+    } catch (error:any) {
+        sendResponse(res, {
+            statuscode:500,
+            success:true,
+            message: error.message,
+            error:error,
+        })
+    }
+};
+
 export const issuesController = {
     createIssues,
     getAllIssues,
     getSingleIssues,
+    updateIssues,
 }
