@@ -22,6 +22,10 @@ const signupUsers = async (req: Request, res:Response) =>{
     } 
 };
 
+
+
 export const usersController = {
     signupUsers,
+   
+    
 };

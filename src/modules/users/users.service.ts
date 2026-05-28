@@ -13,6 +13,11 @@ const signupUsersIntoDB = async (payload:IContributor) =>{
         delete result.rows[0].password;
     return result;
 };
+
+
+
+
 export const usersService = {
     signupUsersIntoDB,
+
 }

@@ -4,3 +4,23 @@ Method -> POST - Time -> 1779940209688 - URL -> /api/issues
 Method -> POST - Time -> 1779940335074 - URL -> /api/issues
 
 Method -> POST - Time -> 1779940366795 - URL -> /api/issues
+
+Method -> GET - Time -> 1779954938315 - URL -> /api/issues
+
+Method -> GET - Time -> 1779955462318 - URL -> /api/issues
+
+Method -> GET - Time -> 1779955605166 - URL -> /api/issues
+
+Method -> POST - Time -> 1779955786043 - URL -> /api/issues
+
+Method -> POST - Time -> 1779955860969 - URL -> /api/issues
+
+Method -> GET - Time -> 1779955875378 - URL -> /api/issues
+
+Method -> GET - Time -> 1779956150407 - URL -> /api/issues
+
+Method -> GET - Time -> 1779956161063 - URL -> /api/login
+
+Method -> GET - Time -> 1779956162684 - URL -> /api/issues
+
+Method -> GET - Time -> 1779956165951 - URL -> /favicon.ico
