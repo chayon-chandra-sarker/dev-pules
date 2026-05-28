@@ -19,11 +19,39 @@ const createIssuesIntoDB = async (payload:any) => {
     return result;
 };
 
-const getAllIssuesFromDB = async () =>{
-    const result = await pool.query(`
-            SELECT * FROM issues
-            `);
-        return result;
+const getAllIssuesFromDB = async (filters: any) => {
+
+    let query = `SELECT * FROM issues`;
+    const values: any[] = [];
+    const conditions: string[] = [];
+
+    const { sort, type, status } = filters;
+
+
+    if (type) {
+        values.push(type);
+        conditions.push(`type = $${values.length}`);
+    }
+
+
+    if (status) {
+        values.push(status);
+        conditions.push(`status = $${values.length}`);
+    }
+
+   
+    if (conditions.length > 0) {
+        query += ` WHERE ` + conditions.join(" AND ");
+    }
+
+    
+    if (sort === "oldest") {
+        query += ` ORDER BY create_at ASC`;
+    } else {
+        query += ` ORDER BY create_at DESC`; 
+    }
+    const result = await pool.query(query, values);
+    return result;
 };
 
 const getSingleIssuesFromDB = async (id:string) =>{

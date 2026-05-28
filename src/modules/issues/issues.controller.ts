@@ -21,22 +21,33 @@ const createIssues = async (req: Request, res:Response) => {
     }
 };
 
-const getAllIssues = async (req:Request, res:Response) => {
-    const result = await issuesService.getAllIssuesFromDB();
+const getAllIssues = async (req: Request, res: Response) => {
+
     try {
-        sendResponse(res,{
-            statuscode:200,
-            success:true,
+
+        const { sort, type, status } = req.query;
+
+        const result = await issuesService.getAllIssuesFromDB({
+            sort,
+            type,
+            status
+        });
+
+        sendResponse(res, {
+            statuscode: 200,
+            success: true,
             message: "Issues retrieved successfully",
             data: result.rows,
-        })
-    } catch (error:any) {
+        });
+
+    } catch (error: any) {
+
         sendResponse(res, {
-            statuscode:500,
-            success:true,
+            statuscode: 500,
+            success: false,
             message: error.message,
-            error:error,
-        })
+            error: error,
+        });
     }
 };
 

@@ -172,3 +172,33 @@ Method -> POST - Time -> 1779992010824 - URL -> /api/issues
 Method -> POST - Time -> 1779992090392 - URL -> /api/issues
 
 Method -> GET - Time -> 1779992106868 - URL -> /api/issues
+
+Method -> POST - Time -> 1779992926115 - URL -> /api/auth/signup
+
+Method -> POST - Time -> 1779993033722 - URL -> /api/auth/signup
+
+Method -> POST - Time -> 1779993063593 - URL -> /api/auth/login
+
+Method -> POST - Time -> 1779993131224 - URL -> /api/issues
+
+Method -> POST - Time -> 1779993191197 - URL -> /api/issues
+
+Method -> GET - Time -> 1779993222692 - URL -> /api/issues
+
+Method -> GET - Time -> 1779993292053 - URL -> //api/issues?status=open
+
+Method -> GET - Time -> 1779993346258 - URL -> /api/issues/1
+
+Method -> GET - Time -> 1779993355927 - URL -> /api/issues/2
+
+Method -> PUT - Time -> 1779993431122 - URL -> /api/issues/1
+
+Method -> PUT - Time -> 1779993506395 - URL -> /api/issues/1/status
+
+Method -> PUT - Time -> 1779993601824 - URL -> /api/issues/1/status
+
+Method -> PUT - Time -> 1779993631477 - URL -> /api/issues/1/status
+
+Method -> PUT - Time -> 1779993682002 - URL -> /api/issues/1/status
+
+Method -> GET - Time -> 1779993926132 - URL -> /api/issues?sort=newest
