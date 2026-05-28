@@ -24,3 +24,7 @@ Method -> GET - Time -> 1779956161063 - URL -> /api/login
 Method -> GET - Time -> 1779956162684 - URL -> /api/issues
 
 Method -> GET - Time -> 1779956165951 - URL -> /favicon.ico
+
+Method -> GET - Time -> 1779957779579 - URL -> /api/issues/2
+
+Method -> GET - Time -> 1779957798448 - URL -> /api/issues/3
