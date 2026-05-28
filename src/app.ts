@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import logger from "./middleware/logger";
 import cors from "cors";
 import { issuesRouter } from "./modules/issues/issues.route";
+import globalErrorHandler from "./middleware/golobal.error.handler";
 const app:Application = express();
 app.use(cookieParser());
 app.use(express.json());
@@ -27,7 +28,7 @@ res.status(200).json({
 app.use('/api/auth/signup', usersRouter);
 app.use("/api/auth", authRoute);
 app.use("/api/issues", issuesRouter)
-
+app.use(globalErrorHandler);
 
 export default app;
 
