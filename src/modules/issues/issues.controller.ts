@@ -103,9 +103,11 @@ const updateIssues = async (req:Request, res:Response) => {
     }
 };
 
+
 export const issuesController = {
     createIssues,
     getAllIssues,
     getSingleIssues,
     updateIssues,
+
 }

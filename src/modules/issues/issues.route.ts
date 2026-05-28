@@ -15,4 +15,6 @@ import { USER_ROLE } from "../../type";
 
     router.delete("/:id",auth(USER_ROLE.maintainer), maintainerController.deleteIssues);
 
+    router.put("/:id/status",auth(USER_ROLE.maintainer), maintainerController.updateIssueStatus);
+
  export const issuesRouter = router;

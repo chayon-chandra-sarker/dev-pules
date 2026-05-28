@@ -41,15 +41,20 @@ const updateIssuesFromDB = async (payload: IIssues, id:string, userData: any) =>
     if(issueData.rows.length === 0){
         throw new Error("Issue not found");
     }
+    const {reporter_id, title, description, type, status} = payload;
+
     const issue = issueData.rows[0];
     if(userData.role === "contributor"){
 
         if(issue.reporter_id !== userData.id){
             throw new Error("Forbidden Access");
-        }
+        };
+        if(status){
+            throw new Error("Contributor cannot change status");
+        };
     }
 
-    const {reporter_id, title, description, type, status} = payload;
+   
        const result = await pool.query(`
             UPDATE issues SET 
             reporter_id= COALESCE($1,reporter_id), 
@@ -63,9 +68,12 @@ const updateIssuesFromDB = async (payload: IIssues, id:string, userData: any) =>
         return result;
 };
 
+
+
 export const issuesService = {
     createIssuesIntoDB,
     getAllIssuesFromDB,
     getSingleIssuesFromDB,
     updateIssuesFromDB,
+  
 }

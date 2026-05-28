@@ -30,6 +30,33 @@ const deleteIssues = async (req:Request, res:Response) => {
         })
     }
 };
+
+const updateIssueStatus = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    try {
+
+        const result = await maintainerService.updateIssueStatusFromDB(id as string, status);
+
+        sendResponse(res, {
+            statuscode: 200,
+            success: true,
+            message: "Issue status updated successfully",
+            data: result.rows[0],
+        });
+
+    } catch (error: any) {
+
+        sendResponse(res, {
+            statuscode: 500,
+            success: false,
+            message: error.message,
+            error: error,
+        });
+    }
+};
 export const maintainerController = {
     deleteIssues,
+    updateIssueStatus,
 };

@@ -8,6 +8,18 @@ const deleteIssuesFromDB = async (id:string) =>{
         return result;
 };
 
+const updateIssueStatusFromDB = async (id: string,status: string) => {
+    const result = await pool.query(`
+        UPDATE issues
+        SET status = $1
+        WHERE id = $2
+        RETURNING *
+    `, [status, id]);
+
+    return result;
+};
+
 export const maintainerService = {
     deleteIssuesFromDB,
+    updateIssueStatusFromDB,
 };

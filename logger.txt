@@ -140,3 +140,35 @@ Method -> POST - Time -> 1779988558274 - URL -> /api/auth/login
 Method -> DELETE - Time -> 1779988584466 - URL -> /api/issues/6
 
 Method -> DELETE - Time -> 1779988742919 - URL -> /api/issues/7
+
+Method -> POST - Time -> 1779990945517 - URL -> /api/auth/login
+
+Method -> POST - Time -> 1779991073736 - URL -> /api/auth/signup
+
+Method -> POST - Time -> 1779991185116 - URL -> /api/auth/signup
+
+Method -> POST - Time -> 1779991241876 - URL -> /api/auth/login
+
+Method -> POST - Time -> 1779991320040 - URL -> /api/issues
+
+Method -> PUT - Time -> 1779991637918 - URL -> /api/issues//1/status
+
+Method -> PUT - Time -> 1779991678501 - URL -> /api/issues/1/status
+
+Method -> GET - Time -> 1779991825354 - URL -> /api/issues
+
+Method -> GET - Time -> 1779991860200 - URL -> /api/issues
+
+Method -> GET - Time -> 1779991903917 - URL -> /api/issues/2
+
+Method -> POST - Time -> 1779991920486 - URL -> /api/auth/login
+
+Method -> GET - Time -> 1779991949819 - URL -> /api/issues
+
+Method -> POST - Time -> 1779991990519 - URL -> /api/issues
+
+Method -> POST - Time -> 1779992010824 - URL -> /api/issues
+
+Method -> POST - Time -> 1779992090392 - URL -> /api/issues
+
+Method -> GET - Time -> 1779992106868 - URL -> /api/issues
