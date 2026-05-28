@@ -33,7 +33,22 @@ const getSingleIssuesFromDB = async (id:string) =>{
         return result;
 };
 
-const updateIssuesFromDB = async (payload: IIssues, id:string) =>{
+const updateIssuesFromDB = async (payload: IIssues, id:string, userData: any) =>{
+        const issueData = await pool.query(`
+        SELECT * FROM issues WHERE id=$1
+    `, [id]);
+
+    if(issueData.rows.length === 0){
+        throw new Error("Issue not found");
+    }
+    const issue = issueData.rows[0];
+    if(userData.role === "contributor"){
+
+        if(issue.reporter_id !== userData.id){
+            throw new Error("Forbidden Access");
+        }
+    }
+
     const {reporter_id, title, description, type, status} = payload;
        const result = await pool.query(`
             UPDATE issues SET 

@@ -1,8 +1,6 @@
 import type { Request, Response } from "express";
 import { issuesService } from "./issues.service";
 import sendResponse from "../../utils/send.response";
-import { usersService } from "../users/users.service";
-
 
 const createIssues = async (req: Request, res:Response) => {
     try {
@@ -78,9 +76,8 @@ const getSingleIssues = async (req:Request, res:Response) => {
 
 const updateIssues = async (req:Request, res:Response) => {
     const {id} = req.params;
-    const {reporter_id, title, description, type, status} = req.body;
     try {
-        const result = await issuesService.updateIssuesFromDB(req.body, id as string);
+        const result = await issuesService.updateIssuesFromDB(req.body, id as string, req.user);
 
         if(result.rows.length === 0){
            sendResponse(res, {
