@@ -93,7 +93,7 @@ const updateIssues = async (req:Request, res:Response) => {
         sendResponse(res,{
             statuscode:200,
             success:true,
-            message: "Issues Update successfully",
+            message: "Issue updated successfully",
             data: result.rows,
         })
     } catch (error:any) {
