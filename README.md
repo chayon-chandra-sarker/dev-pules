@@ -1,9 +1,11 @@
 # 🚀 DevPulse Backend API
 
 A lightweight Issue Tracker Backend System built with Node.js, Express, TypeScript, and PostgreSQL.  
-It allows teams to report bugs, feature requests, and manage workflow with role-based access control.
+It allows teams to report bugs, feature requests, and manage workflow with role-based access control. 
+
 
 ---
+[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen)](https://dev-pulse-virid.vercel.app/)
 
 ## 👥 User Roles
 
