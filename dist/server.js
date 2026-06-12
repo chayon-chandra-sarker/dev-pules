@@ -21,10 +21,10 @@ var config_default = config;
 // src/app.ts
 import express from "express";
 
-// src/modules/users/users.router.ts
+// src/modules/auth/auth.route.ts
 import { Router } from "express";
 
-// src/modules/users/users.service.ts
+// src/modules/auth/auth.service.ts
 import bcrypt from "bcryptjs";
 
 // src/db/index.ts
@@ -65,117 +65,81 @@ var initDB = async () => {
   }
 };
 
-// src/modules/users/users.service.ts
-var signupUsersIntoDB = async (payload) => {
-  const { name, email, password, role } = payload;
-  const hashPassword = await bcrypt.hash(password, 12);
-  const result = await pool.query(`
-        INSERT INTO users (name, email, password, role) VALUES($1,$2,$3, COALESCE($4, 'contributor'))
-        RETURNING *
-        `, [name, email, hashPassword, role]);
-  delete result.rows[0].password;
-  return result;
-};
-var usersService = {
-  signupUsersIntoDB
-};
-
-// src/utils/send.response.ts
-var sendResponse = (res, data) => {
-  res.status(data.statuscode).json({
-    success: data.success,
-    message: data.message,
-    data: data.data,
-    error: data.error
-  });
-};
-var send_response_default = sendResponse;
-
-// src/modules/users/users.controller.ts
-var signupUsers = async (req, res) => {
-  try {
-    const result = await usersService.signupUsersIntoDB(req.body);
-    send_response_default(res, {
-      statuscode: 201,
-      success: true,
-      message: "User registered successfully",
-      data: result.rows[0]
-    });
-  } catch (error) {
-    send_response_default(res, {
-      statuscode: 500,
-      success: true,
-      message: error.message,
-      error
-    });
-  }
-};
-var usersController = {
-  signupUsers
-};
-
-// src/modules/users/users.router.ts
-var router = Router();
-
-// src/modules/auth/auth.route.ts
-import { Router as Router2 } from "express";
-
 // src/modules/auth/auth.service.ts
-import bcrypt2 from "bcryptjs";
 import jwt from "jsonwebtoken";
 var loginIntoDB = async (payload) => {
   const { email, password } = payload;
-  const userData = await pool.query(`
-        SELECT * FROM users WHERE email=$1
-        `, [email]);
-  if (userData.rows.length === 0) {
+  const userData = await pool.query(
+    `SELECT * FROM users WHERE email=$1`,
+    [email]
+  );
+  if (!userData.rows.length) {
     throw new Error("Invalid credentials");
   }
-  ;
   const user = userData.rows[0];
-  const matchPassword = await bcrypt2.compare(password, user.password);
-  console.log(matchPassword);
+  const matchPassword = await bcrypt.compare(password, user.password);
   if (!matchPassword) {
     throw new Error("Invalid credentials");
   }
-  ;
   const jwtPayload = {
-    id: user.id,
-    name: user.name,
-    role: user.role,
-    email: user.email
+    id: user.id
   };
-  const accessToken = jwt.sign(jwtPayload, config_default.secret, { expiresIn: "1d" });
-  const refreshToken2 = jwt.sign(jwtPayload, config_default.refresh_secret, { expiresIn: "100d" });
-  return { accessToken, refreshToken: refreshToken2 };
+  const accessToken = jwt.sign(jwtPayload, config_default.secret, {
+    expiresIn: "1d"
+  });
+  const refreshToken2 = jwt.sign(jwtPayload, config_default.refresh_secret, {
+    expiresIn: "100d"
+  });
+  delete user.password;
+  return {
+    user,
+    token: accessToken,
+    refreshToken: refreshToken2
+  };
 };
 var generateRefresh = async (token) => {
   if (!token) {
-    throw new Error("Unauthorized!!");
+    throw new Error("Unauthorized");
   }
-  ;
-  const decoded = jwt.verify(token, config_default.refresh_secret);
-  const userData = await pool.query(`
-            SELECT * FROM users WHERE email=$1
-        `, [decoded.email]);
+  const decoded = jwt.verify(
+    token,
+    config_default.refresh_secret
+  );
+  if (!decoded.id) {
+    throw new Error("Invalid refresh token");
+  }
+  const userData = await pool.query(
+    `SELECT * FROM users WHERE id=$1`,
+    [decoded.id]
+  );
+  if (!userData.rows.length) {
+    throw new Error("User not found");
+  }
   const user = userData.rows[0];
-  if (userData.rows.length === 0) {
-    throw new Error("user not found!!");
-  }
-  ;
-  const jwtPayload = {
-    id: user.id,
-    name: user.name,
-    role: user.role,
-    email: user.email
+  const newAccessToken = jwt.sign(
+    { id: user.id },
+    config_default.secret,
+    { expiresIn: "1d" }
+  );
+  return {
+    accessToken: newAccessToken
   };
-  const accessToken = jwt.sign(jwtPayload, config_default.secret, { expiresIn: "1d" });
-  return { accessToken };
 };
 var authService = {
   loginIntoDB,
   generateRefresh
 };
+
+// src/utils/send.response.ts
+var sendResponse = (res, data) => {
+  return res.status(data.statusCode).json({
+    success: data.success,
+    message: data.message,
+    ...data.data !== void 0 && { data: data.data },
+    ...data.errors !== void 0 && { errors: data.errors }
+  });
+};
+var send_response_default = sendResponse;
 
 // src/modules/auth/auth.controller.ts
 var login = async (req, res) => {
@@ -188,17 +152,20 @@ var login = async (req, res) => {
       sameSite: "lax"
     });
     send_response_default(res, {
-      statuscode: 200,
+      statusCode: 200,
       success: true,
       message: "Login successfully",
-      data: result
+      data: {
+        user: result.user,
+        token: result.token
+      }
     });
-  } catch (error) {
+  } catch (errors) {
     send_response_default(res, {
-      statuscode: 500,
+      statusCode: 401,
       success: false,
-      message: error.message,
-      error
+      message: errors.message,
+      errors
     });
   }
 };
@@ -210,11 +177,11 @@ var refreshToken = async (req, res) => {
       message: "Access token Generated",
       data: result
     });
-  } catch (error) {
+  } catch (errors) {
     res.status(500).json({
       success: false,
-      message: error.message,
-      error
+      message: errors.message,
+      errors
     });
   }
 };
@@ -223,12 +190,69 @@ var authController = {
   refreshToken
 };
 
+// src/modules/users/users.service.ts
+import bcrypt2 from "bcryptjs";
+import jwt2 from "jsonwebtoken";
+var signupUsersIntoDB = async (payload) => {
+  const { name, email, password, role } = payload;
+  const hashPassword = await bcrypt2.hash(password, 12);
+  const result = await pool.query(`
+        INSERT INTO users (name, email, password, role) VALUES($1,$2,$3, COALESCE($4, 'contributor'))
+        RETURNING *
+        `, [name, email, hashPassword, role]);
+  delete result.rows[0].password;
+  const token = jwt2.sign(
+    {
+      id: result.rows[0].id,
+      email: result.rows[0].email,
+      role: result.rows[0].role
+    },
+    config_default.secret,
+    {
+      expiresIn: "7d"
+    }
+  );
+  return {
+    user: result.rows[0],
+    token
+  };
+};
+var usersService = {
+  signupUsersIntoDB
+};
+
+// src/modules/users/users.controller.ts
+var signupUsers = async (req, res) => {
+  try {
+    const result = await usersService.signupUsersIntoDB(req.body);
+    send_response_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "User registered successfully",
+      data: {
+        user: result.user,
+        token: result.token
+      }
+    });
+  } catch (errors) {
+    send_response_default(res, {
+      statusCode: 500,
+      success: true,
+      message: errors.message,
+      errors
+    });
+  }
+};
+var usersController = {
+  signupUsers
+};
+
 // src/modules/auth/auth.route.ts
-var router2 = Router2();
-router2.post("/signup", usersController.signupUsers);
-router2.post("/login", authController.login);
-router2.post("/refresh-token", authController.refreshToken);
-var authRoute = router2;
+var router = Router();
+router.post("/signup", usersController.signupUsers);
+router.post("/login", authController.login);
+router.post("/refresh-token", authController.refreshToken);
+var authRoute = router;
 
 // src/app.ts
 import cookieParser from "cookie-parser";
@@ -250,21 +274,31 @@ var logger_default = logger;
 import cors from "cors";
 
 // src/modules/issues/issues.route.ts
-import { Router as Router3 } from "express";
+import { Router as Router2 } from "express";
+
+// src/errors/AppError.ts
+var AppError = class extends Error {
+  statusCode;
+  errors;
+  constructor(statusCode, message, errors) {
+    super(message);
+    this.statusCode = statusCode;
+    this.errors = errors;
+  }
+};
+var AppError_default = AppError;
 
 // src/modules/issues/issues.service.ts
-var createIssuesIntoDB = async (payload) => {
-  const { reporter_id, title, description, type, status } = payload;
-  const user = await pool.query(`
-        SELECT * FROM users WHERE id=$1
-        `, [reporter_id]);
-  if (user.rows.length === 0) {
+var createIssuesIntoDB = async (payload, userData) => {
+  const { title, description, type, status } = payload;
+  if (!userData || !userData.id) {
     throw new Error("user not exists");
   }
-  ;
-  const result = await pool.query(`
-        INSERT INTO issues(reporter_id, title, description, type, status) VALUES ($1,$2,$3,$4,$5) RETURNING *
-        `, [reporter_id, title, description, type, status]);
+  const result = await pool.query(
+    `INSERT INTO issues(reporter_id, title, description, type, status)
+         VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+    [userData.id, title, description, type, status]
+  );
   return result;
 };
 var getAllIssuesFromDB = async (filters) => {
@@ -289,42 +323,87 @@ var getAllIssuesFromDB = async (filters) => {
     query += ` ORDER BY create_at DESC`;
   }
   const result = await pool.query(query, values);
-  return result;
+  const issues = result.rows;
+  const reporterIds = [
+    ...new Set(issues.map((issue) => issue.reporter_id))
+  ];
+  const usersResult = await pool.query(
+    `SELECT id, name, email FROM users WHERE id = ANY($1)`,
+    [reporterIds]
+  );
+  const reporterMap = new Map(
+    usersResult.rows.map((user) => [user.id, user])
+  );
+  const issuesWithReporter = issues.map((issue) => ({
+    ...issue,
+    reporter: reporterMap.get(issue.reporter_id) || null
+  }));
+  return issuesWithReporter;
 };
 var getSingleIssuesFromDB = async (id) => {
-  const result = await pool.query(`
-             SELECT * FROM issues WHERE id=$1
-            `, [id]);
-  return result;
+  const result = await pool.query(
+    "SELECT * FROM issues WHERE id = $1",
+    [id]
+  );
+  return result.rows[0];
 };
 var updateIssuesFromDB = async (payload, id, userData) => {
-  const issueData = await pool.query(`
-        SELECT * FROM issues WHERE id=$1
-    `, [id]);
+  const issueData = await pool.query(
+    `
+      SELECT * FROM issues
+      WHERE id = $1
+    `,
+    [id]
+  );
   if (issueData.rows.length === 0) {
-    throw new Error("Issue not found");
+    throw new AppError_default(404, "Issue not found");
   }
-  const { reporter_id, title, description, type, status } = payload;
   const issue = issueData.rows[0];
+  const {
+    title,
+    description,
+    type,
+    status
+  } = payload;
   if (userData.role === "contributor") {
     if (issue.reporter_id !== userData.id) {
-      throw new Error("Forbidden Access");
+      throw new AppError_default(
+        403,
+        "You are not authorized to update this issue"
+      );
     }
-    ;
-    if (status) {
-      throw new Error("Contributor cannot change status");
+    if (issue.status !== "open") {
+      throw new AppError_default(
+        403,
+        "Only open issues can be updated"
+      );
     }
-    ;
+    if (status !== void 0) {
+      throw new AppError_default(
+        403,
+        "Contributor cannot change status"
+      );
+    }
   }
-  const result = await pool.query(`
-            UPDATE issues SET 
-            reporter_id= COALESCE($1,reporter_id), 
-            title = COALESCE($2,title), 
-            description = COALESCE($3,description), 
-            type = COALESCE($4,type),
-            status = COALESCE($5,status)
-            WHERE id =$6 RETURNING *
-        `, [reporter_id, title, description, type, status, id]);
+  const result = await pool.query(
+    `
+      UPDATE issues
+      SET
+        title = COALESCE($1, title),
+        description = COALESCE($2, description),
+        type = COALESCE($3, type),
+        status = COALESCE($4, status)
+      WHERE id = $5
+      RETURNING *
+    `,
+    [
+      title,
+      description,
+      type,
+      status,
+      id
+    ]
+  );
   return result;
 };
 var issuesService = {
@@ -337,19 +416,19 @@ var issuesService = {
 // src/modules/issues/issues.controller.ts
 var createIssues = async (req, res) => {
   try {
-    const result = await issuesService.createIssuesIntoDB(req.body);
+    const result = await issuesService.createIssuesIntoDB(req.body, req.user);
     send_response_default(res, {
-      statuscode: 201,
+      statusCode: 201,
       success: true,
       message: "Issues Create successfully",
       data: result.rows[0]
     });
-  } catch (error) {
+  } catch (errors) {
     send_response_default(res, {
-      statuscode: 500,
+      statusCode: 500,
       success: false,
-      message: error.message,
-      error
+      message: errors.message,
+      errors
     });
   }
 };
@@ -362,50 +441,51 @@ var getAllIssues = async (req, res) => {
       status
     });
     send_response_default(res, {
-      statuscode: 200,
+      statusCode: 200,
       success: true,
       message: "Issues retrieved successfully",
-      data: result.rows
+      data: result
     });
-  } catch (error) {
+  } catch (errors) {
     send_response_default(res, {
-      statuscode: 500,
+      statusCode: 500,
       success: false,
-      message: error.message,
-      error
+      message: errors.message,
+      errors
     });
   }
 };
 var getSingleIssues = async (req, res) => {
-  const { id } = req.params;
   try {
-    const result = await issuesService.getSingleIssuesFromDB(id);
-    if (result.rows.length === 0) {
-      send_response_default(res, {
-        statuscode: 404,
+    const numericId = Number(req.params.id);
+    if (isNaN(numericId)) {
+      return send_response_default(res, {
+        statusCode: 400,
         success: false,
-        message: "Issues Data Not Found",
+        message: "Invalid ID",
         data: {}
       });
-      send_response_default(res, {
-        statuscode: 200,
-        success: true,
-        message: "Issues retrieved successfully",
-        data: result.rows
+    }
+    const result = await issuesService.getSingleIssuesFromDB(numericId);
+    if (!result) {
+      return send_response_default(res, {
+        statusCode: 404,
+        success: false,
+        message: "Issue not found",
+        data: {}
       });
     }
-    send_response_default(res, {
-      statuscode: 200,
+    return send_response_default(res, {
+      statusCode: 200,
       success: true,
       message: "Issue retrieved successfully",
-      data: result.rows[0]
+      data: result
     });
-  } catch (error) {
-    send_response_default(res, {
-      statuscode: 500,
-      success: true,
-      message: error.message,
-      error
+  } catch (errors) {
+    return send_response_default(res, {
+      statusCode: 500,
+      success: false,
+      message: errors.message
     });
   }
 };
@@ -415,24 +495,24 @@ var updateIssues = async (req, res) => {
     const result = await issuesService.updateIssuesFromDB(req.body, id, req.user);
     if (result.rows.length === 0) {
       send_response_default(res, {
-        statuscode: 404,
+        statusCode: 404,
         success: false,
         message: "Issues Data Not Found",
         data: {}
       });
     }
     send_response_default(res, {
-      statuscode: 200,
+      statusCode: 200,
       success: true,
       message: "Issue updated successfully",
-      data: result.rows
+      data: result.rows[0]
     });
-  } catch (error) {
+  } catch (errors) {
     send_response_default(res, {
-      statuscode: 500,
-      success: true,
-      message: error.message,
-      error
+      statusCode: errors.statusCode || 500,
+      success: false,
+      message: errors.message,
+      errors
     });
   }
 };
@@ -467,30 +547,37 @@ var maintainerService = {
 
 // src/modules/maintainer/maintainer.controller.ts
 var deleteIssues = async (req, res) => {
-  const { id } = req.params;
   try {
-    const result = await maintainerService.deleteIssuesFromDB(id);
-    if (result.rowCount === 0) {
-      send_response_default(res, {
-        statuscode: 404,
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      return send_response_default(res, {
+        statusCode: 400,
         success: false,
-        message: "Issues Data Not Found",
+        message: "Invalid id",
         data: {}
       });
     }
-    ;
-    send_response_default(res, {
-      statuscode: 200,
+    const result = await maintainerService.deleteIssuesFromDB(id);
+    if (result.rowCount === 0) {
+      return send_response_default(res, {
+        statusCode: 404,
+        success: false,
+        message: "Issue not found",
+        data: {}
+      });
+    }
+    return send_response_default(res, {
+      statusCode: 200,
       success: true,
       message: "Issue deleted successfully",
       data: {}
     });
-  } catch (error) {
-    send_response_default(res, {
-      statuscode: 500,
-      success: true,
-      message: error.message,
-      error
+  } catch (errors) {
+    return send_response_default(res, {
+      statusCode: 500,
+      success: false,
+      message: errors.message,
+      errors
     });
   }
 };
@@ -500,17 +587,17 @@ var updateIssueStatus = async (req, res) => {
   try {
     const result = await maintainerService.updateIssueStatusFromDB(id, status);
     send_response_default(res, {
-      statuscode: 200,
+      statusCode: 200,
       success: true,
       message: "Issue status updated successfully",
       data: result.rows[0]
     });
-  } catch (error) {
+  } catch (errors) {
     send_response_default(res, {
-      statuscode: 500,
+      statusCode: 500,
       success: false,
-      message: error.message,
-      error
+      message: errors.message,
+      errors
     });
   }
 };
@@ -525,36 +612,39 @@ var auth = (...roles) => {
   return async (req, res, next) => {
     console.log(roles);
     try {
-      const token = req.headers.authorization;
+      const token = req.headers.authorization?.split(" ")[1];
       if (!token) {
-        send_response_default(res, {
-          statuscode: 401,
+        return send_response_default(res, {
+          statusCode: 401,
           success: false,
           message: "Unauthorized Access"
         });
       }
       const decoded = Jwt.verify(token, config_default.secret);
+      console.log("DECODED:", decoded);
+      console.log("ID:", decoded.id);
       const userData = await pool.query(`
-            SELECT * FROM users WHERE email=$1
-        `, [decoded.email]);
+            SELECT * FROM users WHERE id=$1
+        `, [decoded.id]);
       const user = userData.rows[0];
+      console.log(user);
       if (userData.rows.length === 0) {
-        send_response_default(res, {
-          statuscode: 404,
+        return send_response_default(res, {
+          statusCode: 404,
           success: false,
           message: "Data not found"
         });
       }
       ;
       if (roles.length && !roles.includes(user.role)) {
-        send_response_default(res, {
-          statuscode: 401,
+        return send_response_default(res, {
+          statusCode: 401,
           success: false,
           message: "Forbidden"
         });
       }
       ;
-      req.user = decoded;
+      req.user = user;
       next();
     } catch (error) {
       next(error);
@@ -570,24 +660,35 @@ var USER_ROLE = {
 };
 
 // src/modules/issues/issues.route.ts
-var router3 = Router3();
-router3.post("/", auth_default(USER_ROLE.contributor, USER_ROLE.maintainer), issuesController.createIssues);
-router3.get("/", auth_default(USER_ROLE.contributor, USER_ROLE.maintainer), issuesController.getAllIssues);
-router3.get("/:id", auth_default(USER_ROLE.contributor, USER_ROLE.maintainer), issuesController.getSingleIssues);
-router3.put("/:id", auth_default(USER_ROLE.contributor, USER_ROLE.maintainer), issuesController.updateIssues);
-router3.delete("/:id", auth_default(USER_ROLE.maintainer), maintainerController.deleteIssues);
-router3.put("/:id/status", auth_default(USER_ROLE.maintainer), maintainerController.updateIssueStatus);
-var issuesRouter = router3;
+var router2 = Router2();
+router2.post("/", auth_default(USER_ROLE.contributor, USER_ROLE.maintainer), issuesController.createIssues);
+router2.get("/", issuesController.getAllIssues);
+router2.get("/:id", issuesController.getSingleIssues);
+router2.put("/:id", auth_default(USER_ROLE.contributor, USER_ROLE.maintainer), issuesController.updateIssues);
+router2.delete("/:id", auth_default(USER_ROLE.maintainer), maintainerController.deleteIssues);
+router2.put("/:id/status", auth_default(USER_ROLE.maintainer), maintainerController.updateIssueStatus);
+var issuesRouter = router2;
 
 // src/middleware/golobal.error.handler.ts
 var globalErrorHandler = (err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
+  const statusCode = err.statusCode || 500;
+  res.status(statusCode).json({
     success: false,
-    message: err.message || "Internal Server Error"
+    message: err.message || "Internal Server Error",
+    errors: err.errors || null
   });
 };
 var golobal_error_handler_default = globalErrorHandler;
+
+// src/middleware/notFound.ts
+var notFound = (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+    errors: null
+  });
+};
+var notFound_default = notFound;
 
 // src/app.ts
 var app = express();
@@ -605,6 +706,7 @@ app.get("/", (req, res) => {
 });
 app.use("/api/auth", authRoute);
 app.use("/api/issues", issuesRouter);
+app.use(notFound_default);
 app.use(golobal_error_handler_default);
 var app_default = app;
 
