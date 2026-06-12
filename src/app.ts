@@ -1,12 +1,12 @@
 import express from "express";
 import type { Application, Request, Response } from "express";
-import { usersRouter } from "./modules/users/users.router";
 import { authRoute } from "./modules/auth/auth.route";
 import cookieParser from "cookie-parser";
 import logger from "./middleware/logger";
 import cors from "cors";
 import { issuesRouter } from "./modules/issues/issues.route";
 import globalErrorHandler from "./middleware/golobal.error.handler";
+import notFound from "./middleware/notFound";
 
 const app:Application = express();
 app.use(cookieParser());
@@ -26,7 +26,8 @@ res.status(200).json({
 });
 
 app.use("/api/auth", authRoute);
-app.use("/api/issues", issuesRouter)
+app.use("/api/issues", issuesRouter);
+app.use(notFound);
 app.use(globalErrorHandler);
 
 export default app;

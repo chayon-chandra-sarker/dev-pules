@@ -7,9 +7,9 @@ import { USER_ROLE } from "../../type";
  const router = Router();
     router.post("/",auth(USER_ROLE.contributor, USER_ROLE.maintainer), issuesController.createIssues);
 
-    router.get("/", auth(USER_ROLE.contributor, USER_ROLE.maintainer), issuesController.getAllIssues );
+    router.get("/", issuesController.getAllIssues );
 
-    router.get("/:id",auth(USER_ROLE.contributor, USER_ROLE.maintainer), issuesController.getSingleIssues);
+    router.get("/:id", issuesController.getSingleIssues);
 
     router.put("/:id",auth(USER_ROLE.contributor, USER_ROLE.maintainer), issuesController.updateIssues);
 

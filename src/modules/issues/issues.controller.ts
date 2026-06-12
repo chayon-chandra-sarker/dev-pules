@@ -4,19 +4,19 @@ import sendResponse from "../../utils/send.response";
 
 const createIssues = async (req: Request, res:Response) => {
     try {
-        const result = await issuesService.createIssuesIntoDB(req.body);
+        const result = await issuesService.createIssuesIntoDB(req.body,req.user);
         sendResponse(res, {
-            statuscode:201,
+            statusCode:201,
             success:true,
             message: "Issues Create successfully",
             data:result.rows[0],
         })
-    } catch (error:any) {
+    } catch (errors:any) {
          sendResponse(res, {
-            statuscode:500,
+            statusCode:500,
             success:false,
-            message: error.message,
-            error:error,
+            message: errors.message,
+            errors:errors,
         })
     }
 };
@@ -34,55 +34,61 @@ const getAllIssues = async (req: Request, res: Response) => {
         });
 
         sendResponse(res, {
-            statuscode: 200,
+            statusCode: 200,
             success: true,
             message: "Issues retrieved successfully",
-            data: result.rows,
+            data: result,
         });
 
-    } catch (error: any) {
+    } catch (errors: any) {
 
         sendResponse(res, {
-            statuscode: 500,
+            statusCode: 500,
             success: false,
-            message: error.message,
-            error: error,
+            message: errors.message,
+            errors: errors,
         });
     }
 };
 
-const getSingleIssues = async (req:Request, res:Response) => {
-    const {id} = req.params;
-    try {
-        const result = await issuesService.getSingleIssuesFromDB(id as string);
-        if(result.rows.length === 0){
-            sendResponse(res, {
-                statuscode:404,
-                success:false,
-                message: "Issues Data Not Found",
-                data: {},
-            })
-            sendResponse(res,{
-            statuscode:200,
-            success:true,
-            message: "Issues retrieved successfully",
-            data: result.rows,
-        })
-        }
-        sendResponse(res, {
-            statuscode:200,
-            success:true,
-            message: "Issue retrieved successfully",
-            data: result.rows[0],
-        })
-    } catch (error:any) {
-        sendResponse(res, {
-            statuscode:500,
-            success:true,
-            message: error.message,
-            error:error,
-        })
+const getSingleIssues = async (req: Request, res: Response) => {
+  try {
+    const numericId = Number(req.params.id);
+
+    if (isNaN(numericId)) {
+      return sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "Invalid ID",
+        data: {},
+      });
     }
+
+    const result = await issuesService.getSingleIssuesFromDB(numericId);
+
+    if (!result) {
+      return sendResponse(res, {
+        statusCode: 404,
+        success: false,
+        message: "Issue not found",
+        data: {},
+      });
+    }
+
+    return sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Issue retrieved successfully",
+      data: result,
+    });
+
+  } catch (errors: any) {
+    return sendResponse(res, {
+      statusCode: 500,
+      success: false,
+      message: errors.message,
+    });
+  }
 };
 
 const updateIssues = async (req:Request, res:Response) => {
@@ -92,24 +98,24 @@ const updateIssues = async (req:Request, res:Response) => {
 
         if(result.rows.length === 0){
            sendResponse(res, {
-                statuscode:404,
+                statusCode:404,
                 success:false,
                 message: "Issues Data Not Found",
                 data: {},
             })
         }
         sendResponse(res,{
-            statuscode:200,
+            statusCode:200,
             success:true,
             message: "Issue updated successfully",
-            data: result.rows,
+            data: result.rows[0],
         })
-    } catch (error:any) {
+    } catch (errors:any) {
         sendResponse(res, {
-            statuscode:500,
-            success:true,
-            message: error.message,
-            error:error,
+            statusCode:errors.statusCode || 500,
+            success:false,
+            message: errors.message,
+            errors:errors,
         })
     }
 };

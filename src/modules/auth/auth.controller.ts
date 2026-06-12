@@ -14,18 +14,21 @@ const login = async (req:Request, res:Response) => {
         });
 
         sendResponse(res, {
-            statuscode:200,
+            statusCode:200,
             success:true,
             message: "Login successfully",
-            data: result,
+            data: {
+                user: result.user,
+                token: result.token,
+            },
         })
         
-    } catch (error:any) {
+    } catch (errors:any) {
          sendResponse(res, {
-            statuscode:500,
+            statusCode:401,
             success:false,
-            message: error.message,
-            error:error,
+            message: errors.message,
+            errors:errors,
         })
     }
 };
@@ -39,11 +42,11 @@ const refreshToken = async (req:Request,res:Response) => {
             message: "Access token Generated",
             data:result,
         })
-    } catch (error:any) {
+    } catch (errors:any) {
         res.status(500).json({
             success: false,
-            message: error.message,
-            error: error,
+            message: errors.message,
+            errors: errors,
         })
     }
 };

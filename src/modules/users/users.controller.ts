@@ -7,17 +7,20 @@ const signupUsers = async (req: Request, res:Response) =>{
     try {
         const result = await usersService.signupUsersIntoDB(req.body);
           sendResponse(res, {
-            statuscode:201,
+            statusCode:201,
             success:true,
             message: "User registered successfully",
-            data: result.rows[0],
+            data: {
+                user: result.user,
+                token: result.token,
+            },
         })
-    } catch (error:any) {
+    } catch (errors:any) {
          sendResponse(res, {
-            statuscode:500,
+            statusCode:500,
             success:true,
-            message: error.message,
-            error:error,
+            message: errors.message,
+            errors:errors,
         })
     } 
 };

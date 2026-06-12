@@ -2,33 +2,45 @@ import type { Request, Response } from "express";
 import { maintainerService } from "./maintainer.service";
 import sendResponse from "../../utils/send.response";
 
-const deleteIssues = async (req:Request, res:Response) => {
-    const {id} = req.params;
-    try {
-        const result = await maintainerService.deleteIssuesFromDB(id as string);
-        if(result.rowCount === 0) {
-            sendResponse(res, {
-                statuscode:404,
-                success:false,
-                message: "Issues Data Not Found",
-                data: {},
-            })
-        };
-        sendResponse(res,{
-            statuscode:200,
-            success:true,
-            message: "Issue deleted successfully",
-            data:{},
-        })
+const deleteIssues = async (req: Request, res: Response) => {
 
-    } catch (error:any) {
-        sendResponse(res, {
-            statuscode:500,
-            success:true,
-            message: error.message,
-            error:error,
-        })
+  try {
+    const id = Number(req.params.id);
+
+        if (isNaN(id)) {
+            return sendResponse(res, {
+                 statusCode: 400,
+                 success: false,
+                 message: "Invalid id",
+                 data: {},
+                });
+        }
+    const result = await maintainerService.deleteIssuesFromDB(id);
+
+    if (result.rowCount === 0) {
+      return sendResponse(res, {
+        statusCode: 404,
+        success: false,
+        message: "Issue not found",
+        data: {},
+      });
     }
+
+    return sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Issue deleted successfully",
+      data: {},
+    });
+
+  } catch (errors: any) {
+    return sendResponse(res, {
+      statusCode: 500,
+      success: false,
+      message: errors.message,
+      errors: errors,
+    });
+  }
 };
 
 const updateIssueStatus = async (req: Request, res: Response) => {
@@ -40,19 +52,19 @@ const updateIssueStatus = async (req: Request, res: Response) => {
         const result = await maintainerService.updateIssueStatusFromDB(id as string, status);
 
         sendResponse(res, {
-            statuscode: 200,
+            statusCode: 200,
             success: true,
             message: "Issue status updated successfully",
             data: result.rows[0],
         });
 
-    } catch (error: any) {
+    } catch (errors: any) {
 
         sendResponse(res, {
-            statuscode: 500,
+            statusCode: 500,
             success: false,
-            message: error.message,
-            error: error,
+            message: errors.message,
+            errors: errors,
         });
     }
 };
